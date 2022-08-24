@@ -4,11 +4,16 @@ import {
   CloseIcon,
   Container,
   Divider,
+  Hidden,
+  HStack,
+  IconButton,
   Stack,
   useColorModeValue,
   useMediaQuery,
 } from 'native-base';
+import { useRouter } from 'next/router';
 import React from 'react';
+import { useAuth } from '../../services';
 import Appbar from './Appbar';
 import LeftSide from './LeftSide';
 
@@ -19,8 +24,15 @@ const LayoutAdmin: React.FC = ({ children }) => {
   });
   const [isOpen, setIsOpen] = React.useState(isSmall ? false : true);
 
+  const { isLogin } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!isLogin) router.push('/auth');
+  }, []);
+
   return (
-    <Container flex={1} maxW="full">
+    <HStack flex={1}>
       <Stack
         direction={['column', 'column', 'row']}
         w="full"
@@ -28,8 +40,8 @@ const LayoutAdmin: React.FC = ({ children }) => {
         divider={<Divider />}
       >
         <Box
-          display={isOpen ? 'flex' : 'none'}
-          width={['full', 'full', '64', '72']}
+          // display={isOpen ? 'flex' : 'none'}
+          width={isOpen ? ['full', 'full', '64', '72'] : '0'}
           bg="white"
           borderRightWidth={{
             base: 0,
@@ -40,25 +52,22 @@ const LayoutAdmin: React.FC = ({ children }) => {
           }}
           overflowY="auto"
           overflowX="hidden"
-          position={isSmall ? 'fixed' : 'relative'}
+          position={['fixed', 'fixed', 'relative']}
           height="full"
-          zIndex={100}
+          zIndex={[2, 2, 0]}
         >
-          {isSmall && (
-            <Button
-              variant="ghost"
-              size="md"
-              position="absolute"
-              roundedRight={0}
-              zIndex={101}
-              right={0}
-              top={0}
-              height={50}
-              onPress={() => setIsOpen(false)}
-            >
-              <CloseIcon />
-            </Button>
-          )}
+          <IconButton
+            variant="ghost"
+            size="md"
+            position="absolute"
+            roundedRight={0}
+            zIndex={2}
+            right={0}
+            top={0}
+            height={50}
+            onPress={() => setIsOpen(false)}
+            icon={<CloseIcon />}
+          />
           <LeftSide />
         </Box>
         <Box
@@ -74,7 +83,7 @@ const LayoutAdmin: React.FC = ({ children }) => {
           <Box p="8">{children}</Box>
         </Box>
       </Stack>
-    </Container>
+    </HStack>
   );
 };
 

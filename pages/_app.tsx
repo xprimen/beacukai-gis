@@ -4,6 +4,7 @@ import 'moment/locale/id';
 import { extendTheme, NativeBaseProvider, theme } from 'native-base';
 import colors from 'native-base/src/theme/base/colors';
 import type { AppProps } from 'next/app';
+import { AuthProvider } from '../services';
 import '../styles/globals.css';
 
 moment.locale('id-ID');
@@ -148,11 +149,21 @@ const themeExtend = extendTheme({
   },
 }; */
 
+// 2. Get the type of the CustomTheme
+type CustomThemeType = typeof themeExtend;
+
+// 3. Extend the internal NativeBase Theme
+declare module 'native-base' {
+  interface ICustomTheme extends CustomThemeType {}
+}
+
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <NativeBaseProvider theme={themeExtend} isSSR>
-      <Component {...pageProps} />
-    </NativeBaseProvider>
+    <AuthProvider>
+      <NativeBaseProvider theme={themeExtend} isSSR>
+        <Component {...pageProps} />
+      </NativeBaseProvider>
+    </AuthProvider>
   );
 }
 

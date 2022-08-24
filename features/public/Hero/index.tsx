@@ -1,44 +1,27 @@
-import {
-  AspectRatio,
-  Box,
-  Factory,
-  HStack,
-  Image as ImageNB,
-  Text,
-} from 'native-base';
-import Image from 'next/image';
+import { HStack, Image as ImageNB } from 'native-base';
 import React from 'react';
-import { Autoplay, EffectFade, Navigation, Pagination, Virtual } from 'swiper';
-import './Hero.module.scss';
-import SlideshowNB from '../../../components/SlideshowNB/SlideshowNB';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css/bundle';
+import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper';
 import 'swiper/css';
+import 'swiper/css/autoplay';
+import 'swiper/css/bundle';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import 'swiper/css/autoplay';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { IImageToSlide } from '../../../configs/types';
 
-type ImageType = {
-  title: string;
-  imageUrl: string;
-};
-
-interface Props {
-  images: ImageType[];
-}
-
-const index: React.FC<Props> = ({ images }) => {
+const index: React.FC<{ imageToSlide: IImageToSlide[] }> = ({
+  imageToSlide,
+}) => {
   return (
     <HStack
       height={{
-        base: '32',
+        base: '48',
         sm: '72',
         md: '400px',
-        lg: '424px',
-        xl: '900px',
+        lg: '560px',
+        xl: '1080px',
       }}
     >
-      {/* <ImageNB src="/images/slideshow/01.jpg" size="full" alt="asdasd" /> */}
       <Swiper
         style={{ flex: 1 }}
         spaceBetween={30}
@@ -50,14 +33,10 @@ const index: React.FC<Props> = ({ images }) => {
           delay: 5000,
           disableOnInteraction: false,
         }}
-        // pagination={{
-        //   clickable: true,
-        // }}
-        // navigation={true}
         modules={[Autoplay, EffectFade, Pagination, Navigation]}
       >
-        {images.map((image, index) => (
-          <SwiperSlide key={index}>
+        {imageToSlide.map((image) => (
+          <SwiperSlide key={image.title}>
             <ImageNB
               src={image.imageUrl}
               width="full"

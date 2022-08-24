@@ -1,24 +1,21 @@
-import React from 'react';
 import {
-  Box,
+  HamburgerIcon,
   Heading,
   HStack,
-  Icon,
+  IconButton,
   Menu,
   Text,
-  Link as LinkNB,
-  useContrastText,
-  useColorModeValue,
   theme,
+  useColorModeValue,
+  useContrastText,
   useMediaQuery,
-  HamburgerIcon,
-  IconButton,
 } from 'native-base';
-import { Pressable } from 'react-native';
 import Link from 'next/link';
-import ProfileAdminPage from '../../components/ProfileAdminPage';
-import ColorModeSwitch from '../../components/ColorModeSwitch';
-import { FaUser, FaSignOutAlt } from 'react-icons/fa';
+import React from 'react';
+import { FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { Pressable } from 'react-native';
+import ProfileAdminPage from '../../features/admin/ProfileAdminPage';
+import { useAuth } from '../../services';
 
 interface Props {
   showBurger: boolean;
@@ -32,14 +29,13 @@ const Appbar: React.FC<Props> = ({ showBurger, isOpen, setIsOpen }) => {
     theme.colors.darkText,
     theme.colors.lightText
   );
+  const [isSmall] = useMediaQuery({
+    minWidth: 0,
+    maxWidth: 767,
+  });
   const textColor = useContrastText(bgColor);
-  // const onPress = (event: React.MouseEventHandler): void => {
-  //   console.log(event);
-  // };
-  // const [isShowBurger] = useMediaQuery({
-  //   minWidth: 0,
-  //   maxWidth: 767,
-  // });
+
+  const { logout, user } = useAuth();
 
   return (
     <HStack
@@ -58,15 +54,12 @@ const Appbar: React.FC<Props> = ({ showBurger, isOpen, setIsOpen }) => {
       }}
     >
       <HStack alignItems="center" space="2" px={4}>
-        {/* {showBurger && <HamburgerIcon color={textColor} size="sm" />} */}
-        {/* {showBurger && ( */}
         <IconButton
           onPress={() => setIsOpen(!isOpen)}
           size="md"
           variant="ghost"
           icon={<HamburgerIcon color={textColor} />}
         />
-        {/* )} */}
         <Link href="/admin" passHref>
           <HStack alignItems="center" space="2" mr="4">
             <Heading size="lg" color={textColor}>
@@ -79,7 +72,6 @@ const Appbar: React.FC<Props> = ({ showBurger, isOpen, setIsOpen }) => {
         </Link>
       </HStack>
       <HStack alignSelf="flex-end">
-        {/* <ColorModeSwitch /> */}
         <Menu
           width={{
             base: '48',
@@ -88,7 +80,11 @@ const Appbar: React.FC<Props> = ({ showBurger, isOpen, setIsOpen }) => {
           trigger={(triggerProps, state) => {
             return (
               <Pressable {...triggerProps}>
-                <ProfileAdminPage isOpen={state.open} textColor={textColor} />
+                <ProfileAdminPage
+                  displayName={user?.displayName}
+                  isOpen={state.open}
+                  textColor={textColor}
+                />
               </Pressable>
             );
           }}
@@ -105,10 +101,12 @@ const Appbar: React.FC<Props> = ({ showBurger, isOpen, setIsOpen }) => {
             </Link>
           </Menu.Item>
           <Menu.Item py={0}>
-            <HStack alignItems="center" justifyContent="space-between" py={4}>
-              <Text>Logout</Text>
-              <FaSignOutAlt color={iconColor} />
-            </HStack>
+            <Pressable onPress={() => logout()}>
+              <HStack alignItems="center" justifyContent="space-between" py={4}>
+                <Text>Logout</Text>
+                <FaSignOutAlt color={iconColor} />
+              </HStack>
+            </Pressable>
           </Menu.Item>
         </Menu>
       </HStack>

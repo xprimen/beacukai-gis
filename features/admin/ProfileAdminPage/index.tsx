@@ -8,14 +8,20 @@ import {
   useColorModeValue,
 } from 'native-base';
 import React from 'react';
+import { useAuth } from '../../../services';
 
 interface Props {
   isOpen: boolean;
   textColor: string;
+  displayName: string | null | undefined;
 }
 
 // const index = ({ isOpen, textColor }: Props) => {
-const ProfileAdminPage: React.FC<Props> = ({ isOpen, textColor }) => {
+const ProfileAdminPage: React.FC<Props> = ({
+  isOpen,
+  textColor,
+  displayName,
+}) => {
   // const textColor = useColorModeValue(
   //   theme.colors.lightText,
   //   theme.colors.darkText
@@ -23,7 +29,7 @@ const ProfileAdminPage: React.FC<Props> = ({ isOpen, textColor }) => {
   return (
     <HStack alignItems="center" space="2" paddingX="4" flex={1}>
       <Avatar>A</Avatar>
-      <Text color={textColor}>Name</Text>
+      <Text color={textColor}>{displayName}</Text>
       {isOpen ? (
         <ChevronUpIcon color={textColor} />
       ) : (

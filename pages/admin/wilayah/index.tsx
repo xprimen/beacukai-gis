@@ -1,98 +1,143 @@
-import React from 'react';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  DocumentData,
+  endBefore,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  QuerySnapshot,
+  startAfter,
+} from 'firebase/firestore';
 import {
   Box,
+  Button,
   Center,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Heading,
   HStack,
   IconButton,
+  Text,
+  theme,
   Tooltip,
-  Link as LinkNB,
-  Button,
-  Card,
+  VStack,
 } from 'native-base';
 import { NextPage } from 'next';
-import Link from 'next/link';
-import { useMemo } from 'react';
+import router from 'next/router';
+import React from 'react';
 import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
-import { useTable } from 'react-table';
+import { DBfire } from '../../../configs/firebase/clientApp';
+import { IWilayah } from '../../../configs/types';
 import LayoutAdmin from '../../../layouts/Admin/LayoutAdmin';
 
-interface Props {
-  data?: object;
-}
+const wilayah: NextPage = () => {
+  const [dataWilayah, setDataWilayah] = React.useState<IWilayah[] | null>();
+  const [wilayahLoading, setWilayahLoading] = React.useState(true);
+  const [dataDocs, setDataDocs] = React.useState<QuerySnapshot<DocumentData>>();
+  const [tablePage, setTablePage] = React.useState<number>(1);
+  const limitTable = 10;
 
-interface RowOriginalInterface {
-  id: number;
-  nama: string;
-  warna: string;
-}
+  const previousPageTable = async () => {
+    setWilayahLoading(true);
+    const lastVisible = dataDocs?.docs[0];
+    const prev = await getDocs(
+      query(
+        collection(DBfire, 'wilayah'),
+        orderBy('nama'),
+        limit(limitTable),
+        endBefore(lastVisible)
+      )
+    );
+    // console.log(lastVisible, prev);
+    if (!prev.empty && tablePage >= 0) {
+      const ret = prev.docs.map((doc) => {
+        return {
+          id: doc.id,
+          nama: doc.data().nama,
+        };
+      });
+      setDataDocs(prev);
+      setDataWilayah(ret);
+      setTablePage(tablePage - 1);
+    }
+    setWilayahLoading(false);
+  };
 
-const wilayah: NextPage<Props> = ({ data }) => {
-  const columns: object[] = useMemo(
-    () => [
-      {
-        Header: 'ID',
-        accessor: 'id',
-        Cell: ({ value }: { value: string }) => <Center>{value}</Center>,
-      },
-      {
-        Header: 'Nama Wilayah',
-        accessor: 'nama',
-      },
-      {
-        Header: 'Opsi',
-        Cell: ({
-          row: { original },
-        }: {
-          row: { original: RowOriginalInterface };
-        }) => {
-          return (
-            <HStack alignItems="center" justifyContent="center" space={1}>
-              <Link href={`/admin/wilayah/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Edit" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="success"
-                      color="white"
-                      variant="solid"
-                      icon={<FaEdit size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-              <Link href={`/admin/wilayah/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Hapus" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="danger"
-                      color="white"
-                      variant="solid"
-                      icon={<FaTrash size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-            </HStack>
-          );
-        },
-      },
-    ],
-    []
-  );
-  const tableInstance = useTable({
-    columns,
-    data,
-  });
+  const nextPageTable = async () => {
+    setWilayahLoading(true);
+    const lastVisible = dataDocs?.docs[dataDocs?.docs.length - 1];
+    const next = await getDocs(
+      query(
+        collection(DBfire, 'wilayah'),
+        orderBy('nama'),
+        limit(limitTable),
+        startAfter(lastVisible)
+      )
+    );
+    if (!next.empty) {
+      const ret = next.docs.map((doc) => {
+        return {
+          id: doc.id,
+          nama: doc.data().nama,
+        };
+      });
+      setDataDocs(next);
+      setDataWilayah(ret);
+      setTablePage(tablePage + 1);
+    }
+    setWilayahLoading(false);
+  };
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
+  const getWilayah = async () => {
+    setWilayahLoading(true);
+    try {
+      const data = await getDocs(
+        query(collection(DBfire, 'wilayah'), orderBy('nama'), limit(limitTable))
+      );
+      const ret = data.docs.map((doc) => {
+        return {
+          id: doc.id,
+          nama: doc.data().nama,
+        };
+      });
+      setDataDocs(data);
+      setDataWilayah(ret);
+    } catch (error) {
+      // if (error.message == 'Missing or insufficient permissions.') {
+      if (error) {
+        router.push('/auth');
+      }
+    }
+    setWilayahLoading(false);
+  };
+
+  const deleteData = async (id: string) => {
+    if (confirm('Yakin Akan Menghapus Data ini?')) {
+      if (id) {
+        const deleteProcess = await deleteDoc(doc(DBfire, 'wilayah', id));
+        console.log(deleteProcess);
+        getWilayah();
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    getWilayah();
+  }, [setDataWilayah]);
+
   return (
     <LayoutAdmin>
       <HStack alignItems="center" justifyContent="space-between" mb="4">
         <Heading size="md">Data Wilayah</Heading>
-        <Button color="white" leftIcon={<FaPlus size={12} />} size="md">
+        <Button
+          color="white"
+          onPress={() => router.push('/admin/wilayah/add')}
+          leftIcon={<FaPlus size={12} />}
+          size="md"
+        >
           Tambah
         </Button>
       </HStack>
@@ -105,67 +150,92 @@ const wilayah: NextPage<Props> = ({ data }) => {
         direction={['column', 'column', 'row']}
         space={4}
       >
-        <Box flex={1} overflow="auto">
-          <table className="table-data" {...getTableProps()}>
+        <VStack flex={1} overflow="auto" space="4">
+          <table className="table-data">
             <thead>
-              {headerGroups.map((headerGroup, index1) => (
-                <tr {...headerGroup.getHeaderGroupProps()} key={index1}>
-                  {headerGroup.headers.map((column, index2) => (
-                    <th {...column.getHeaderProps()} key={index2}>
-                      {column.render('Header')}
-                    </th>
-                  ))}
-                </tr>
-              ))}
+              <tr
+                style={{
+                  backgroundColor: theme.colors.blue[800],
+                  color: 'white',
+                }}
+              >
+                <td style={{ textAlign: 'center' }}>No.</td>
+                <td>Nama Wilayah</td>
+                <td style={{ textAlign: 'center' }}>Opsi</td>
+              </tr>
             </thead>
-            <tbody {...getTableBodyProps()}>
-              {rows.map((row, i) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()} key={i}>
-                    {row.cells.map((cell, index) => {
-                      return (
-                        <td {...cell.getCellProps()} key={index}>
-                          {cell.render('Cell')}
-                        </td>
-                      );
-                    })}
+            <tbody>
+              {wilayahLoading ? (
+                <tr>
+                  <td colSpan={3}>
+                    <Center>Loading...</Center>
+                  </td>
+                </tr>
+              ) : (
+                dataWilayah?.map((d, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Center>{(tablePage - 1) * limitTable + 1 + i}</Center>
+                    </td>
+                    <td>{d.nama}</td>
+                    <td>
+                      <HStack
+                        alignItems="center"
+                        justifyContent="center"
+                        space={1}
+                      >
+                        <Tooltip label="Edit" placement="top">
+                          <IconButton
+                            onPress={() =>
+                              router.push(`/admin/wilayah/edit/${d.id}`)
+                            }
+                            size="sm"
+                            colorScheme="success"
+                            color="white"
+                            variant="solid"
+                            icon={<FaEdit size={12} />}
+                          />
+                        </Tooltip>
+                        <Tooltip label="Delete" placement="top">
+                          <IconButton
+                            onPress={() => deleteData(d.id)}
+                            size="sm"
+                            colorScheme="danger"
+                            color="white"
+                            variant="solid"
+                            icon={<FaTrash size={12} />}
+                          />
+                        </Tooltip>
+                      </HStack>
+                    </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
-        </Box>
+          <HStack flex={1} space="2">
+            <Box>
+              <IconButton
+                onPress={previousPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronLeftIcon />}
+              />
+            </Box>
+            <Text>{tablePage}</Text>
+            <Box>
+              <IconButton
+                onPress={nextPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronRightIcon />}
+              />
+            </Box>
+          </HStack>
+        </VStack>
       </HStack>
     </LayoutAdmin>
   );
 };
 
 export default wilayah;
-
-wilayah.getInitialProps = async () => {
-  const data = [
-    {
-      id: 1,
-      nama: 'Sumbagtim',
-    },
-    {
-      id: 2,
-      nama: 'Sumsel',
-    },
-    {
-      id: 3,
-      nama: 'Jambi',
-    },
-    {
-      id: 4,
-      nama: 'Bangka',
-    },
-    {
-      id: 5,
-      nama: 'Belitung',
-    },
-  ];
-
-  return { data };
-};

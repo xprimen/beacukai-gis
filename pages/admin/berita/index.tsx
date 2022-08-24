@@ -1,118 +1,157 @@
-import React from 'react';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  DocumentData,
+  endBefore,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  QuerySnapshot,
+  startAfter,
+} from 'firebase/firestore';
+import moment from 'moment';
 import {
   Box,
+  Button,
   Center,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Heading,
   HStack,
   IconButton,
+  Text,
+  theme,
   Tooltip,
-  Link as LinkNB,
-  Button,
-  Card,
+  VStack,
 } from 'native-base';
 import { NextPage } from 'next';
-import Link from 'next/link';
-import { useMemo } from 'react';
+import router from 'next/router';
+import React from 'react';
 import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
-import { useTable } from 'react-table';
+import { DBfire } from '../../../configs/firebase/clientApp';
+import { IBerita } from '../../../configs/types';
 import LayoutAdmin from '../../../layouts/Admin/LayoutAdmin';
-import moment from 'moment';
-import { z } from 'zod';
 
-interface Props {
-  data?: object;
-}
+const berita: NextPage = () => {
+  const [dataBerita, setDataBerita] = React.useState<IBerita[] | null>();
+  const [beritaLoading, setBeritaLoading] = React.useState(true);
+  const [dataDocs, setDataDocs] = React.useState<QuerySnapshot<DocumentData>>();
+  const [tablePage, setTablePage] = React.useState<number>(1);
+  const limitTable = 10;
 
-/* interface RowOriginalInterface {
-  id: number;
-  date: Date;
-  slug: string;
-  title: string;
-  content: string;
-  image: string;
-  author: number;
-} */
+  const previousPageTable = async () => {
+    setBeritaLoading(true);
+    const lastVisible = dataDocs?.docs[0];
+    const prev = await getDocs(
+      query(
+        collection(DBfire, 'berita'),
+        orderBy('date', 'desc'),
+        limit(limitTable),
+        endBefore(lastVisible)
+      )
+    );
+    // console.log(lastVisible, prev);
+    if (!prev.empty && tablePage >= 0) {
+      const ret = prev.docs.map((doc) => {
+        return {
+          id: doc.id,
+          title: doc.data().title,
+          content: doc.data().content,
+          image: doc.data().image,
+          date: doc.data().date.seconds * 1000,
+        };
+      });
+      setDataDocs(prev);
+      setDataBerita(ret);
+      setTablePage(tablePage - 1);
+    }
+    setBeritaLoading(false);
+  };
 
-const RowOriginalInterface = z.array(
-  z.object({
-    id: z.number(),
-    date: z.date(),
-    slug: z.string(),
-    title: z.string(),
-    content: z.string(),
-    image: z.string(),
-    author: z.number(),
-  })
-);
+  const nextPageTable = async () => {
+    setBeritaLoading(true);
+    const lastVisible = dataDocs?.docs[dataDocs?.docs.length - 1];
+    const next = await getDocs(
+      query(
+        collection(DBfire, 'berita'),
+        orderBy('date', 'desc'),
+        limit(limitTable),
+        startAfter(lastVisible)
+      )
+    );
+    if (!next.empty) {
+      const ret = next.docs.map((doc) => {
+        return {
+          id: doc.id,
+          title: doc.data().title,
+          content: doc.data().content,
+          image: doc.data().image,
+          date: doc.data().date.seconds * 1000,
+        };
+      });
+      setDataDocs(next);
+      setDataBerita(ret);
+      setTablePage(tablePage + 1);
+    }
+    setBeritaLoading(false);
+  };
 
-const berita: NextPage<Props> = ({ data }) => {
-  const columns = useMemo(
-    () => [
-      {
-        Header: 'No',
-        accessor: (_: object[], index: number) => <Center>{index + 1}</Center>,
-      },
-      {
-        Header: 'Judul Berita',
-        accessor: 'title',
-      },
-      {
-        Header: 'Tanggal',
-        accessor: (row) => {
-          console.log(typeof row.date);
-          return <Center>{moment(row.date).format('DD MMM YYYY')}</Center>;
-        },
-      },
-      {
-        Header: 'Opsi',
-        Cell: ({ row: { original } }) => {
-          return (
-            <HStack alignItems="center" justifyContent="center" space={1}>
-              <Link href={`/admin/berita/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Edit" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="success"
-                      color="white"
-                      variant="solid"
-                      icon={<FaEdit size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-              <Link href={`/admin/berita/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Hapus" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="danger"
-                      color="white"
-                      variant="solid"
-                      icon={<FaTrash size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-            </HStack>
-          );
-        },
-      },
-    ],
-    []
-  );
-  const tableInstance = useTable({
-    columns,
-    data,
-  });
+  const getBerita = async () => {
+    setBeritaLoading(true);
+    try {
+      const data = await getDocs(
+        query(
+          collection(DBfire, 'berita'),
+          orderBy('date', 'desc'),
+          limit(limitTable)
+        )
+      );
+      const ret = data.docs.map((doc) => {
+        return {
+          id: doc.id,
+          title: doc.data().title,
+          content: doc.data().content,
+          image: doc.data().image,
+          date: doc.data().date.seconds * 1000,
+        };
+      });
+      setDataDocs(data);
+      setDataBerita(ret);
+    } catch (error) {
+      // if (error.message == 'Missing or insufficient permissions.') {
+      if (error) {
+        router.push('/auth');
+      }
+    }
+    setBeritaLoading(false);
+  };
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
+  const deleteData = async (id: string) => {
+    if (confirm('Yakin Akan Menghapus Data ini?')) {
+      if (id) {
+        const deleteProcess = await deleteDoc(doc(DBfire, 'berita', id));
+        console.log(deleteProcess);
+        getBerita();
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    getBerita();
+  }, [setDataBerita]);
+
   return (
     <LayoutAdmin>
       <HStack alignItems="center" justifyContent="space-between" mb="4">
         <Heading size="md">Data Berita</Heading>
-        <Button color="white" leftIcon={<FaPlus size={12} />} size="md">
+        <Button
+          color="white"
+          onPress={() => router.push('/admin/berita/add')}
+          leftIcon={<FaPlus size={12} />}
+          size="md"
+        >
           Tambah
         </Button>
       </HStack>
@@ -125,75 +164,94 @@ const berita: NextPage<Props> = ({ data }) => {
         direction={['column', 'column', 'row']}
         space={4}
       >
-        <Box flex={1} overflow="auto">
-          <table className="table-data" {...getTableProps()}>
+        <VStack flex={1} overflow="auto" space="4">
+          <table className="table-data">
             <thead>
-              {headerGroups.map((headerGroup, index1) => (
-                <tr {...headerGroup.getHeaderGroupProps()} key={index1}>
-                  {headerGroup.headers.map((column, index2) => (
-                    <th {...column.getHeaderProps()} key={index2}>
-                      {column.render('Header')}
-                    </th>
-                  ))}
-                </tr>
-              ))}
+              <tr
+                style={{
+                  backgroundColor: theme.colors.blue[800],
+                  color: 'white',
+                }}
+              >
+                <td style={{ textAlign: 'center' }}>No.</td>
+                <td>Tanggal</td>
+                <td>Judul Berita</td>
+                <td style={{ textAlign: 'center' }}>Opsi</td>
+              </tr>
             </thead>
-            <tbody {...getTableBodyProps()}>
-              {rows.map((row, i) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()} key={i}>
-                    {row.cells.map((cell, index) => {
-                      return (
-                        <td {...cell.getCellProps()} key={index}>
-                          {cell.render('Cell')}
-                        </td>
-                      );
-                    })}
+            <tbody>
+              {beritaLoading ? (
+                <tr>
+                  <td colSpan={4}>
+                    <Center>Loading...</Center>
+                  </td>
+                </tr>
+              ) : (
+                dataBerita?.map((d, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Center>{(tablePage - 1) * limitTable + 1 + i}</Center>
+                    </td>
+                    <td>{moment(d.date).format('D MMM YYYY')}</td>
+                    <td>{d.title}</td>
+                    <td>
+                      <HStack
+                        alignItems="center"
+                        justifyContent="center"
+                        space={1}
+                      >
+                        <Tooltip label="Edit" placement="top">
+                          <IconButton
+                            onPress={() =>
+                              router.push(`/admin/berita/edit/${d.id}`)
+                            }
+                            size="sm"
+                            colorScheme="success"
+                            color="white"
+                            variant="solid"
+                            icon={<FaEdit size={12} />}
+                          />
+                        </Tooltip>
+                        <Tooltip label="Delete" placement="top">
+                          <IconButton
+                            onPress={() => deleteData(d.id)}
+                            size="sm"
+                            colorScheme="danger"
+                            color="white"
+                            variant="solid"
+                            icon={<FaTrash size={12} />}
+                          />
+                        </Tooltip>
+                      </HStack>
+                    </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
-        </Box>
+          <HStack flex={1} space="2">
+            <Box>
+              <IconButton
+                onPress={previousPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronLeftIcon />}
+              />
+            </Box>
+            <Text>{tablePage}</Text>
+            <Box>
+              <IconButton
+                onPress={nextPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronRightIcon />}
+              />
+            </Box>
+          </HStack>
+        </VStack>
       </HStack>
     </LayoutAdmin>
   );
 };
 
 export default berita;
-
-berita.getInitialProps = async () => {
-  const date = new Date();
-  const data = [
-    {
-      id: 1,
-      date: date,
-      slug: 'title-1',
-      title: 'Title 1',
-      content: 'das asda sdas dasda sdasda sd',
-      image: 'asd',
-      author: 1,
-    },
-    {
-      id: 2,
-      date: date,
-      slug: 'title-2',
-      title: 'Title 2',
-      content: 'das asda sdas dasda sdasda sd',
-      image: 'asd',
-      author: 1,
-    },
-    {
-      id: 3,
-      date: date,
-      slug: 'title-3',
-      title: 'Title 3',
-      content: 'das asda sdas dasda sdasda sd',
-      image: 'asd',
-      author: 1,
-    },
-  ];
-
-  return { data };
-};

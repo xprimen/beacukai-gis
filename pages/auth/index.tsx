@@ -1,18 +1,26 @@
-import React from 'react';
 import {
   Box,
   Button,
+  Image as ImageNB,
   Input,
   Text,
   VStack,
-  Image as ImageNB,
 } from 'native-base';
 import { NextPage } from 'next';
-import Image from 'next/image';
+import React from 'react';
 import { FaSignInAlt } from 'react-icons/fa';
 import LayoutAuth from '../../layouts/Auth/LayoutAuth';
+import { useAuth } from '../../services';
 
 const index: NextPage = () => {
+  const [email, setEmail] = React.useState<string>('');
+  const [password, setPassword] = React.useState<string>('');
+  const { login, loading } = useAuth();
+
+  const handleLogin = () => {
+    login(email, password);
+  };
+
   return (
     <LayoutAuth>
       <Box
@@ -34,7 +42,11 @@ const index: NextPage = () => {
               Username
             </Text>
             <Box flex={1} width="full">
-              <Input placeholder="Username" />
+              <Input
+                placeholder="Email"
+                keyboardType="email-address"
+                onChangeText={setEmail}
+              />
             </Box>
           </VStack>
           <VStack space="2" mb="8">
@@ -42,13 +54,20 @@ const index: NextPage = () => {
               Password
             </Text>
             <Box flex={1} width="full">
-              <Input placeholder="Password" />
+              <Input
+                placeholder="Password"
+                type="password"
+                onChangeText={setPassword}
+              />
             </Box>
           </VStack>
           <Button
             textTransform="uppercase"
             color="white"
+            isLoading={loading}
+            isDisabled={loading}
             leftIcon={<FaSignInAlt size={12} />}
+            onPress={handleLogin}
           >
             Login
           </Button>

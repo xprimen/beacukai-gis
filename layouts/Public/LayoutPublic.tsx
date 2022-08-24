@@ -1,31 +1,58 @@
-import { Box, Center, Container, Text } from 'native-base';
+import { Box } from 'native-base';
 import React from 'react';
-import Hero from '../../features/public/Hero';
+import { MenuPublicType } from '../../configs/types';
+import Footer from '../../features/public/Footer';
+import Header from '../../features/public/Header';
 
-// const LayoutPublic: React.FC = ({ children }) => {
-//   return (
-//     <Center>
-//       <Hero />
-//       {/* <Container minW={['full', 'full', '5/6']} bg="coolGray.400">
-//         <Text>dasdasd</Text>
-//       </Container> */}
-//     </Center>
-//   );
-// };
-
-const imageToSlide: object[] = [
+const dataMenus: MenuPublicType[] = [
   {
-    title: '01',
-    imageUrl: '/images/slideshow/01.jpg',
+    label: 'Home',
+    link: '/',
   },
   {
-    title: '02',
-    imageUrl: '/images/slideshow/02.jpg',
+    label: 'Wilayah',
+    link: '/wilayah',
+    // children: [
+    //   {
+    //     label: 'Sumbagsel',
+    //     link: '/statistik/sumbagsel',
+    //   },
+    //   {
+    //     label: 'Sumsel',
+    //     link: '/statistik/sumsel',
+    //   },
+    //   {
+    //     label: 'Jambi',
+    //     link: '/statistik/jambi',
+    //   },
+    //   {
+    //     label: 'Bangka',
+    //     link: '/statistik/bangka',
+    //   },
+    //   {
+    //     label: 'Belitung',
+    //     link: '/statistik/belitung',
+    //   },
+    // ],
+  },
+  {
+    label: 'Berita',
+    link: '/berita',
+  },
+  {
+    label: 'Tentang',
+    link: '/about',
   },
 ];
 
 const LayoutPublic: React.FC = ({ children }) => {
-  return <Hero images={imageToSlide} />;
+  return (
+    <Box overflowY="auto" flex={1}>
+      <Header dataMenus={dataMenus} />
+      {children}
+      <Footer />
+    </Box>
+  );
 };
 
 export default LayoutPublic;

@@ -1,127 +1,212 @@
-import React from 'react';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  endBefore,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  QuerySnapshot,
+  SnapshotOptions,
+  startAfter,
+} from 'firebase/firestore';
+import { ObjectIteratee } from 'lodash';
 import {
   Box,
+  Button,
   Center,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Heading,
   HStack,
   IconButton,
+  Text,
+  theme,
   Tooltip,
-  Link as LinkNB,
-  Button,
-  Card,
+  VStack,
 } from 'native-base';
 import { NextPage } from 'next';
-import Link from 'next/link';
-import { useMemo } from 'react';
+import router from 'next/router';
+import React from 'react';
 import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
-import { useTable } from 'react-table';
+import { DBfire } from '../../../configs/firebase/clientApp';
+import { IPenerimaan, IWilayah } from '../../../configs/types';
 import LayoutAdmin from '../../../layouts/Admin/LayoutAdmin';
 import { numberToString } from '../../../helpers/number';
 
-interface Props {
-  data?: object;
-}
-
-interface RowOriginalInterface {
-  id: number;
-  nama: string;
-  warna: string;
-}
-
-const penerimaan: NextPage<Props> = ({ data }) => {
-  const columns: object[] = useMemo(
+const penerimaan: NextPage = () => {
+  const [dataPenerimaan, setDataPenerimaan] = React.useState<
+    IPenerimaan[] | null | undefined
+  >();
+  const [penerimaanLoading, setPenerimaanLoading] = React.useState(true);
+  const [dataDocs, setDataDocs] = React.useState<QuerySnapshot<DocumentData>>();
+  const [tablePage, setTablePage] = React.useState<number>(1);
+  const limitTable = 10;
+  const bulans = React.useMemo(
     () => [
-      {
-        Header: 'No',
-        accessor: (_: object[], index: number) => <Center>{index + 1}</Center>,
-      },
-      {
-        Header: 'Tahun',
-        accessor: 'tahun',
-        Cell: ({ value }: { value: string }) => <Center>{value}</Center>,
-      },
-      {
-        Header: 'Bulan',
-        accessor: 'bulan',
-      },
-      {
-        Header: 'Wilayah',
-        accessor: 'id_wilayah',
-      },
-      {
-        Header: 'Bea Masuk',
-        accessor: 'bea_masuk',
-        Cell: ({ value }: { value: number }) => 'Rp ' + numberToString(value),
-      },
-      {
-        Header: 'Bea Keluar',
-        accessor: 'bea_keluar',
-        Cell: ({ value }: { value: number }) => 'Rp ' + numberToString(value),
-      },
-      {
-        Header: 'Cukai',
-        accessor: 'cukai',
-        Cell: ({ value }: { value: number }) => 'Rp ' + numberToString(value),
-      },
-      {
-        Header: 'Komoditi',
-        accessor: 'komoditi',
-        Cell: ({ value }: { value: number }) => 'Rp ' + numberToString(value),
-      },
-      {
-        Header: 'Opsi',
-        Cell: ({
-          row: { original },
-        }: {
-          row: { original: RowOriginalInterface };
-        }) => {
-          return (
-            <HStack alignItems="center" justifyContent="center" space={1}>
-              <Link href={`/admin/penerimaan/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Edit" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="success"
-                      color="white"
-                      variant="solid"
-                      icon={<FaEdit size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-              <Link href={`/admin/penerimaan/${original.id}`} passHref>
-                <a>
-                  <Tooltip label="Hapus" placement="top">
-                    <IconButton
-                      size="sm"
-                      colorScheme="danger"
-                      color="white"
-                      variant="solid"
-                      icon={<FaTrash size={12} />}
-                    />
-                  </Tooltip>
-                </a>
-              </Link>
-            </HStack>
-          );
-        },
-      },
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ],
     []
   );
-  const tableInstance = useTable({
-    columns,
-    data,
-  });
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
+  const previousPageTable = async () => {
+    setPenerimaanLoading(true);
+    const lastVisible = dataDocs?.docs[0];
+    const prev = await getDocs(
+      query(
+        collection(DBfire, 'penerimaan'),
+        orderBy('tahun', 'desc'),
+        limit(limitTable),
+        endBefore(lastVisible)
+      )
+    );
+    // console.log(lastVisible, prev);
+    if (!prev.empty && tablePage >= 0) {
+      const ret = prev.docs.map(async (doc) => {
+        const getWilayah: DocumentSnapshot<DocumentData> = await getDoc(
+          doc.data().id_wilayah
+        );
+        let wilayah: IWilayah = {
+          id: getWilayah.id,
+          nama: getWilayah.get('nama'),
+        };
+        return {
+          id: doc.id,
+          tahun: doc.data().tahun,
+          bulan: doc.data().bulan,
+          wilayah,
+          bea_masuk: doc.data().bea_masuk,
+          bea_keluar: doc.data().bea_keluar,
+          cukai: doc.data().cukai,
+          komoditi: doc.data().komoditi,
+        };
+      });
+      setDataDocs(prev);
+      setDataPenerimaan(await Promise.all(ret));
+      setTablePage(tablePage - 1);
+    }
+    setPenerimaanLoading(false);
+  };
+
+  const nextPageTable = async () => {
+    setPenerimaanLoading(true);
+    const lastVisible = dataDocs?.docs[dataDocs?.docs.length - 1];
+    const next = await getDocs(
+      query(
+        collection(DBfire, 'penerimaan'),
+        orderBy('tahun', 'desc'),
+        limit(limitTable),
+        startAfter(lastVisible)
+      )
+    );
+    if (!next.empty) {
+      const ret = next.docs.map(async (doc) => {
+        const getWilayah: DocumentSnapshot<DocumentData> = await getDoc(
+          doc.data().id_wilayah
+        );
+        let wilayah: IWilayah = {
+          id: getWilayah.id,
+          nama: getWilayah.get('nama'),
+        };
+        return {
+          id: doc.id,
+          tahun: doc.data().tahun,
+          bulan: doc.data().bulan,
+          wilayah,
+          bea_masuk: doc.data().bea_masuk,
+          bea_keluar: doc.data().bea_keluar,
+          cukai: doc.data().cukai,
+          komoditi: doc.data().komoditi,
+        };
+      });
+      setDataDocs(next);
+      setDataPenerimaan(await Promise.all(ret));
+      setTablePage(tablePage + 1);
+    }
+    setPenerimaanLoading(false);
+  };
+
+  const getPenerimaan = async () => {
+    setPenerimaanLoading(true);
+    try {
+      const data = await getDocs(
+        query(
+          collection(DBfire, 'penerimaan'),
+          orderBy('tahun', 'desc'),
+          limit(limitTable)
+        )
+      );
+      const ret = data.docs.map(async (doc) => {
+        const getWilayah: DocumentSnapshot<DocumentData> = await getDoc(
+          doc.data().id_wilayah
+        );
+        let wilayah: IWilayah = {
+          id: getWilayah.id,
+          nama: getWilayah.get('nama'),
+        };
+        return {
+          id: doc.id,
+          tahun: doc.data().tahun,
+          bulan: doc.data().bulan,
+          wilayah,
+          bea_masuk: doc.data().bea_masuk,
+          bea_keluar: doc.data().bea_keluar,
+          cukai: doc.data().cukai,
+          komoditi: doc.data().komoditi,
+        };
+      });
+      setDataDocs(data);
+      setDataPenerimaan(await Promise.all(ret));
+    } catch (error) {
+      console.log(error);
+      // if (error.message == 'Missing or insufficient permissions.') {
+      // if (error) {
+      //   router.push('/auth');
+      // }
+    }
+    setPenerimaanLoading(false);
+  };
+
+  const deleteData = async (id: string) => {
+    if (confirm('Yakin Akan Menghapus Data ini?')) {
+      if (id) {
+        const deleteProcess = await deleteDoc(doc(DBfire, 'penerimaan', id));
+        getPenerimaan();
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    getPenerimaan();
+  }, [setDataPenerimaan]);
+  // console.log(dataPenerimaan);
+
   return (
     <LayoutAdmin>
       <HStack alignItems="center" justifyContent="space-between" mb="4">
         <Heading size="md">Data Penerimaan</Heading>
-        <Button color="white" leftIcon={<FaPlus size={12} />} size="md">
+        <Button
+          color="white"
+          onPress={() => router.push('/admin/penerimaan/add')}
+          leftIcon={<FaPlus size={12} />}
+          size="md"
+        >
           Tambah
         </Button>
       </HStack>
@@ -134,97 +219,104 @@ const penerimaan: NextPage<Props> = ({ data }) => {
         direction={['column', 'column', 'row']}
         space={4}
       >
-        <Box flex={1} overflow="auto">
-          <table width="100%" className="table-data" {...getTableProps()}>
+        <VStack flex={1} overflow="auto" space="4">
+          <table className="table-data">
             <thead>
-              {headerGroups.map((headerGroup, index1) => (
-                <tr {...headerGroup.getHeaderGroupProps()} key={index1}>
-                  {headerGroup.headers.map((column, index2) => (
-                    <th {...column.getHeaderProps()} key={index2}>
-                      {column.render('Header')}
-                    </th>
-                  ))}
-                </tr>
-              ))}
+              <tr
+                style={{
+                  backgroundColor: theme.colors.blue[800],
+                  color: 'white',
+                }}
+              >
+                <td style={{ textAlign: 'center' }}>No.</td>
+                <td>Tahun</td>
+                <td>Bulan</td>
+                <td>Wilayah</td>
+                <td>Bea Masuk</td>
+                <td>Bea Keluar</td>
+                <td>Cukai</td>
+                <td>Komoditi</td>
+                <td style={{ textAlign: 'center' }}>Opsi</td>
+              </tr>
             </thead>
-            <tbody {...getTableBodyProps()}>
-              {rows.map((row, i) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()} key={i}>
-                    {row.cells.map((cell, index) => {
-                      return (
-                        <td {...cell.getCellProps()} key={index}>
-                          {cell.render('Cell')}
-                        </td>
-                      );
-                    })}
+            <tbody>
+              {penerimaanLoading ? (
+                <tr>
+                  <td colSpan={9}>
+                    <Center>Loading...</Center>
+                  </td>
+                </tr>
+              ) : (
+                dataPenerimaan?.map((d, i) => (
+                  <tr key={i}>
+                    <td>
+                      <Center>{(tablePage - 1) * limitTable + 1 + i}</Center>
+                    </td>
+                    <td>{d.tahun}</td>
+                    <td>{bulans[d.bulan]}</td>
+                    <td>{d.wilayah?.nama}</td>
+                    <td>Rp {numberToString(d.bea_masuk)}</td>
+                    <td>Rp {numberToString(d.bea_keluar)}</td>
+                    <td>Rp {numberToString(d.cukai)}</td>
+                    <td>Rp {numberToString(d.komoditi)}</td>
+                    <td>
+                      <HStack
+                        alignItems="center"
+                        justifyContent="center"
+                        space={1}
+                      >
+                        <Tooltip label="Edit" placement="top">
+                          <IconButton
+                            onPress={() =>
+                              router.push(`/admin/penerimaan/edit/${d.id}`)
+                            }
+                            size="sm"
+                            colorScheme="success"
+                            color="white"
+                            variant="solid"
+                            icon={<FaEdit size={12} />}
+                          />
+                        </Tooltip>
+                        <Tooltip label="Delete" placement="top">
+                          <IconButton
+                            onPress={() => deleteData(d.id)}
+                            size="sm"
+                            colorScheme="danger"
+                            color="white"
+                            variant="solid"
+                            icon={<FaTrash size={12} />}
+                          />
+                        </Tooltip>
+                      </HStack>
+                    </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
-        </Box>
+          <HStack flex={1} space="2">
+            <Box>
+              <IconButton
+                onPress={previousPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronLeftIcon />}
+              />
+            </Box>
+            <Text>{tablePage}</Text>
+            <Box>
+              <IconButton
+                onPress={nextPageTable}
+                variant="outline"
+                size="xs"
+                icon={<ChevronRightIcon />}
+              />
+            </Box>
+          </HStack>
+        </VStack>
       </HStack>
     </LayoutAdmin>
   );
 };
 
 export default penerimaan;
-
-penerimaan.getInitialProps = async () => {
-  const data = [
-    {
-      id: 1,
-      tahun: 2022,
-      bulan: 'Januari',
-      id_wilayah: 'Sumbagtim',
-      bea_masuk: 6505148000,
-      bea_keluar: 64537255000,
-      cukai: 20000000,
-      komoditi: 0,
-    },
-    {
-      id: 2,
-      tahun: 2022,
-      bulan: 'Januari',
-      id_wilayah: 'Sumsel',
-      bea_masuk: 6016147000,
-      bea_keluar: 23191662000,
-      cukai: 20000000,
-      komoditi: 0,
-    },
-    {
-      id: 3,
-      tahun: 2022,
-      bulan: 'Januari',
-      id_wilayah: 'Jambi',
-      bea_masuk: 58002000,
-      bea_keluar: 25860748000,
-      cukai: 0,
-      komoditi: 0,
-    },
-    {
-      id: 4,
-      tahun: 2022,
-      bulan: 'Januari',
-      id_wilayah: 'Bangka',
-      bea_masuk: 430748000,
-      bea_keluar: 0,
-      cukai: 0,
-      komoditi: 0,
-    },
-    {
-      id: 5,
-      tahun: 2022,
-      bulan: 'Januari',
-      id_wilayah: 'Belitung',
-      bea_masuk: 251000,
-      bea_keluar: 15484845000,
-      cukai: 0,
-      komoditi: 0,
-    },
-  ];
-
-  return { data };
-};

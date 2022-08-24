@@ -2,6 +2,7 @@ import {
   Box,
   Divider,
   HStack,
+  Image as ImageNB,
   Link as LinkNB,
   Text,
   theme,
@@ -36,16 +37,24 @@ const Menus: React.FC = () => {
         flex={1}
         alignItems="center"
         justifyContent="center"
-        position="relative"
+        // position="relative"
         alignSelf="center"
         maxH="80px"
       >
-        <Image
+        <Box h="80px" width="full" position="relative">
+          <Image
+            src="/images/logo-text.png"
+            layout="fill"
+            objectFit="contain"
+            alt="Logo"
+          />
+        </Box>
+        {/* <Image
           src="/images/logo-text.png"
-          layout="fill"
-          objectFit="contain"
-          alt="Logo"
-        />
+          width="md"
+          height="full"
+          alt="logo text"
+        /> */}
       </HStack>
       <Divider />
       <Box flex={1}>
