@@ -38,18 +38,12 @@ const index: React.FC = () => {
           <Heading size="md" color="yellow.400">
             KEMENTERIAN KEUANGAN
           </Heading>
-          <Text color="yellow.400">
-            DIREKTORAT JENDERAL BEA DAN CUKAI PALEMBANG
-          </Text>
+          <Text color="yellow.400">DIREKTORAT JENDERAL BEA DAN CUKAI</Text>
           <Text color="yellow.400">
             Kantor Pusat : Jl. Jenderal A Yani (By Pass) Rawamangun, Jakarta
             Timur - 13230
           </Text>
-          <Text color="yellow.400">
-            Kantor Palembang : Jl. Mayor Memet Sastrawirya Nomor 360, Boom Baru,
-            Palembang, Sumatera Selatan, Indonesia
-          </Text>
-          <Text color="yellow.400">Telp : (0711) 710528</Text>
+          <Text color="yellow.400">Telp : 1500 225</Text>
         </VStack>
       </HStack>
     </Box>
