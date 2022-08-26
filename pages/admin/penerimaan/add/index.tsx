@@ -37,25 +37,25 @@ const index = () => {
   const [IDwilayah, setIDWilayah] = React.useState<string | undefined>();
   const [selectedWilayah, setSelectedWilayah] = React.useState<string>();
   const [tahun, setTahun] = React.useState<string | undefined>();
-  const [bulan, setBulan] = React.useState<string | undefined>();
+  const [bulan, setBulan] = React.useState<number | undefined>();
   const [bea_masuk, setBea_masuk] = React.useState<string | undefined>();
   const [bea_keluar, setBea_keluar] = React.useState<string | undefined>();
   const [cukai, setCukai] = React.useState<string | undefined>();
   const [komoditi, setKomoditi] = React.useState<string | undefined>();
-  const bulans = React.useMemo(
+  const bulans: { id: number; val: string }[] = React.useMemo(
     () => [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
+      { id: 1, val: 'Januari' },
+      { id: 2, val: 'Februari' },
+      { id: 3, val: 'Maret' },
+      { id: 4, val: 'April' },
+      { id: 5, val: 'Mei' },
+      { id: 6, val: 'Juni' },
+      { id: 7, val: 'Juli' },
+      { id: 8, val: 'Agustus' },
+      { id: 9, val: 'September' },
+      { id: 10, val: 'Oktober' },
+      { id: 11, val: 'November' },
+      { id: 12, val: 'Desember' },
     ],
     []
   );
@@ -108,7 +108,7 @@ const index = () => {
     const setServer = collection(DBfire, 'penerimaan');
     const update = await addDoc(setServer, {
       tahun: Number(tahun),
-      bulan: Number(bulan),
+      bulan: bulan ? bulan - 1 : bulan,
       id_wilayah: doc(DBfire, '/wilayah/' + IDwilayah),
       bea_masuk: Number(bea_masuk),
       bea_keluar: Number(bea_keluar),
@@ -166,7 +166,7 @@ const index = () => {
                     justifyContent="space-between"
                     alignItems="center"
                   >
-                    {bulan ? bulans[parseInt(bulan, 10)] : 'Pilih Bulan'}
+                    {bulan ? bulans[bulan - 1].val : 'Pilih Bulan'}
                     <ChevronDownIcon />
                   </HStack>
                 </Pressable>
@@ -182,8 +182,8 @@ const index = () => {
               }}
             >
               {bulans.map((d, i) => (
-                <Menu.ItemOption key={i} value={i}>
-                  {d}
+                <Menu.ItemOption key={i} value={d.id}>
+                  {d.val}
                 </Menu.ItemOption>
               ))}
             </Menu.OptionGroup>
@@ -191,46 +191,50 @@ const index = () => {
         </HStack>
         <HStack alignItems="center">
           <Text w="48">Wilayah</Text>
-          <Menu
-            trigger={(triggerProps) => {
-              return (
-                <Pressable
-                  flex={1}
-                  accessibilityLabel="More options menu"
-                  {...triggerProps}
-                >
-                  <HStack
-                    // flex={1}
-                    p="4"
-                    shadow={4}
-                    justifyContent="space-between"
-                    alignItems="center"
+          {wilayahLoading ? (
+            <Text>Loading...</Text>
+          ) : (
+            <Menu
+              trigger={(triggerProps) => {
+                return (
+                  <Pressable
+                    flex={1}
+                    accessibilityLabel="More options menu"
+                    {...triggerProps}
                   >
-                    {selectedWilayah ? selectedWilayah : 'Pilih Wilayah'}
-                    <ChevronDownIcon />
-                  </HStack>
-                </Pressable>
-              );
-            }}
-          >
-            <Menu.OptionGroup
-              type="radio"
-              title="Tahun"
-              defaultValue={IDwilayah}
-              onChange={(val) => {
-                setIDWilayah(val);
-                const getWilayah = _.find(wilayah, (d) => d.id === val);
-                setSelectedWilayah(getWilayah?.nama);
+                    <HStack
+                      // flex={1}
+                      p="4"
+                      shadow={4}
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      {selectedWilayah ? selectedWilayah : 'Pilih Wilayah'}
+                      <ChevronDownIcon />
+                    </HStack>
+                  </Pressable>
+                );
               }}
             >
-              {wilayah &&
-                wilayah.map((d: { id: string; nama: string }, i: number) => (
-                  <Menu.ItemOption flex={1} value={d.id} key={i}>
-                    {d.nama}
-                  </Menu.ItemOption>
-                ))}
-            </Menu.OptionGroup>
-          </Menu>
+              <Menu.OptionGroup
+                type="radio"
+                title="Wilayah"
+                defaultValue={IDwilayah}
+                onChange={(val) => {
+                  setIDWilayah(val);
+                  const getWilayah = _.find(wilayah, (d) => d.id === val);
+                  setSelectedWilayah(getWilayah?.nama);
+                }}
+              >
+                {wilayah &&
+                  wilayah.map((d: { id: string; nama: string }, i: number) => (
+                    <Menu.ItemOption flex={1} value={d.id} key={i}>
+                      {d.nama}
+                    </Menu.ItemOption>
+                  ))}
+              </Menu.OptionGroup>
+            </Menu>
+          )}
         </HStack>
         <HStack alignItems="center">
           <Text w="48">Bea Masuk</Text>

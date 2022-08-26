@@ -1,7 +1,14 @@
 import {
   BarElement,
   CategoryScale,
+  Chart,
   Chart as ChartJS,
+  ChartComponent,
+  ChartData,
+  ChartDataset,
+  ChartDatasetProperties,
+  ChartTypeRegistry,
+  DatasetChartOptions,
   LinearScale,
   Tooltip,
 } from 'chart.js';
@@ -39,7 +46,7 @@ const index: NextPage = () => {
   const [selectedWilayahText, setSelectedWilayahText] = React.useState('');
 
   const [dataWilayah, setDataWilayah] = React.useState<IWilayah[]>([]);
-  const [dataPenerimaan, setDataPenerimaan] = React.useState<IDataPnerimaan>();
+  const [dataPenerimaan, setDataPenerimaan] = React.useState<any>();
   const [wilayahLoading, setWilayahLoading] = React.useState(true);
   const [penerimaanLoading, setPenerimaanLoading] = React.useState(true);
   const bulans = React.useMemo(
@@ -96,7 +103,22 @@ const index: NextPage = () => {
     setWilayahLoading(false);
   };
 
+  const getDataGrafik = (
+    data: { [key: string]: string | number | undefined }[],
+    t: string
+  ) => {
+    // const typeData = 'bea_masuk';
+    const newData = bulans.map((b, i) => {
+      let finded: { [key: string]: string | number | undefined } | undefined;
+      finded = _.find(data, (d) => d.bulan === i);
+      const get = finded ? finded[t] : 0;
+      return get;
+    });
+    return newData;
+  };
+
   const getPenerimaan = async () => {
+    setPenerimaanLoading(true);
     const q = query(
       collection(DBfire, 'penerimaan'),
       where('id_wilayah', '==', doc(DBfire, '/wilayah/' + id)),
@@ -105,7 +127,7 @@ const index: NextPage = () => {
     const data = await getDocs(q);
     const ret = data.docs.map((doc) => {
       const newData = doc.data();
-      const set: IPenerimaan = {
+      const set = {
         id: doc.id,
         bea_keluar: newData.bea_keluar,
         bea_masuk: newData.bea_masuk,
@@ -121,7 +143,8 @@ const index: NextPage = () => {
       datasets: [
         {
           //   label: 'Bea Masuk ' + tahunSelected,
-          data: ret.map((d) => d.bea_masuk),
+          // data: ret.map((d) => d.bea_masuk),
+          data: getDataGrafik(ret, 'bea_masuk'),
           backgroundColor: theme.colors.blue[700],
         },
       ],
@@ -131,7 +154,7 @@ const index: NextPage = () => {
       datasets: [
         {
           //   label: 'Bea Keluar ' + tahunSelected,
-          data: ret.map((d) => d.bea_keluar),
+          data: getDataGrafik(ret, 'bea_keluar'),
           backgroundColor: theme.colors.red[700],
         },
       ],
@@ -141,7 +164,7 @@ const index: NextPage = () => {
       datasets: [
         {
           //   label: 'Cukai ' + tahunSelected,
-          data: ret.map((d) => d.cukai),
+          data: getDataGrafik(ret, 'cukai'),
           backgroundColor: theme.colors.green[700],
         },
       ],
@@ -151,7 +174,7 @@ const index: NextPage = () => {
       datasets: [
         {
           //   label: 'Bea Keluar ' + tahunSelected,
-          data: ret.map((d) => d.komoditi),
+          data: getDataGrafik(ret, 'komoditi'),
           backgroundColor: theme.colors.yellow[700],
         },
       ],
@@ -324,6 +347,16 @@ const index: NextPage = () => {
                 p="4"
               >
                 <Box shadow="4" flex={1} p="4">
+                  {penerimaanLoading && (
+                    <Box
+                      width={['full', 'full', 'full', 'full', '1/2']}
+                      height={['xs', 'xs', 'sm', 'md']}
+                      alignItems="center"
+                      p="4"
+                    >
+                      <Skeleton flex={1} />
+                    </Box>
+                  )}
                   {!penerimaanLoading && dataPenerimaan && (
                     <Bar options={options} data={dataPenerimaan.bea_masuk} />
                   )}
@@ -338,6 +371,16 @@ const index: NextPage = () => {
                 p="4"
               >
                 <Box shadow="4" flex={1} p="4">
+                  {penerimaanLoading && (
+                    <Box
+                      width={['full', 'full', 'full', 'full', '1/2']}
+                      height={['xs', 'xs', 'sm', 'md']}
+                      alignItems="center"
+                      p="4"
+                    >
+                      <Skeleton flex={1} />
+                    </Box>
+                  )}
                   {!penerimaanLoading && dataPenerimaan && (
                     <Bar options={options} data={dataPenerimaan.bea_keluar} />
                   )}
@@ -352,6 +395,16 @@ const index: NextPage = () => {
                 p="4"
               >
                 <Box shadow="4" flex={1} p="4">
+                  {penerimaanLoading && (
+                    <Box
+                      width={['full', 'full', 'full', 'full', '1/2']}
+                      height={['xs', 'xs', 'sm', 'md']}
+                      alignItems="center"
+                      p="4"
+                    >
+                      <Skeleton flex={1} />
+                    </Box>
+                  )}
                   {!penerimaanLoading && dataPenerimaan && (
                     <Bar options={options} data={dataPenerimaan.komoditi} />
                   )}
@@ -366,6 +419,16 @@ const index: NextPage = () => {
                 p="4"
               >
                 <Box shadow="4" flex={1} p="4">
+                  {penerimaanLoading && (
+                    <Box
+                      width={['full', 'full', 'full', 'full', '1/2']}
+                      height={['xs', 'xs', 'sm', 'md']}
+                      alignItems="center"
+                      p="4"
+                    >
+                      <Skeleton flex={1} />
+                    </Box>
+                  )}
                   {!penerimaanLoading && dataPenerimaan && (
                     <Bar options={options} data={dataPenerimaan.cukai} />
                   )}
