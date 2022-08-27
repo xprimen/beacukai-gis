@@ -13,17 +13,10 @@ const about: NextPage = () => {
           Sekilas Tentang Website ini
         </Heading>
         <Text textAlign="justify">
-          Website ini Merupakan Lorem ipsum dolor sit amet consectetur
-          adipisicing elit. Enim, nihil porro? Voluptatem id fuga delectus
-          officia porro laborum, recusandae maxime nobis aliquid, molestias
-          quos. Nobis modi nostrum minima quaerat numquam!. Lorem ipsum dolor
-          sit amet consectetur adipisicing elit. Illum suscipit totam rerum, a
-          ducimus ipsum, labore, esse explicabo repudiandae perferendis commodi?
-          Obcaecati accusantium, repellat corporis eaque dolores nobis iste ad.
-          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptates,
-          numquam hic culpa quos asperiores dolore, quia, quae quibusdam a at
-          aliquid recusandae ab vitae placeat fugiat nihil magnam commodi
-          tempora.
+          Website ini merupakan website informasi kantor wilayah djbc sumbagtim
+          yang masih bersifat uji coba. Segala fitur yang dimiliki akan terus
+          dievaluasi untuk dilakukan peningkatan di kemudian hari. Untuk info
+          lebih lanjut hubungi: (Telp) 0711-362781
         </Text>
       </Box>
     </LayoutPublic>
